@@ -1,5 +1,5 @@
 # ============================================================
-#   Windows Setup Toolkit - GUI Version w/ Logging
+#   Windows Setup Toolkit - GUI Version w/ Logging + Run All
 # ============================================================
 
 Add-Type -AssemblyName System.Windows.Forms
@@ -19,58 +19,83 @@ function Write-Log {
     $LogBox.AppendText("$entry`r`n")
 }
 
-# ------- Download + Install Helpers -------
+# ---------------------------------------------
+# DOWNLOAD + SILENT INSTALL FUNCTIONS
+# ---------------------------------------------
+
 function Install-EXE {
-    param($Name, $URL, $Args = "/silent /verysilent /norestart")
+    param(
+        [string]$Name,
+        [string]$URL,
+        [string]$Args
+    )
 
     Write-Log "Downloading $Name..."
     $Temp = "$env:TEMP\$Name.exe"
-    Invoke-WebRequest $URL -OutFile $Temp
+    Invoke-WebRequest $URL -OutFile $Temp -UseBasicParsing
 
-    Write-Log "Installing $Name..."
+    Write-Log "Installing $Name silently..."
     Start-Process $Temp -ArgumentList $Args -Wait
     Remove-Item $Temp -Force
     Write-Log "$Name installed successfully."
 }
 
 function Install-MSI {
-    param($Name, $URL, $Args = "/quiet /norestart")
+    param(
+        [string]$Name,
+        [string]$URL,
+        [string]$Args
+    )
 
     Write-Log "Downloading $Name..."
     $Temp = "$env:TEMP\$Name.msi"
-    Invoke-WebRequest $URL -OutFile $Temp
+    Invoke-WebRequest $URL -OutFile $Temp -UseBasicParsing
 
-    Write-Log "Installing $Name..."
+    Write-Log "Installing $Name silently..."
     Start-Process "msiexec.exe" -ArgumentList "/i `"$Temp`" $Args" -Wait
     Remove-Item $Temp -Force
+
     Write-Log "$Name installed successfully."
 }
 
-# ------- App Install Routines -------
+# ---------------------------------------------
+# APP INSTALLS (with correct silent arguments)
+# ---------------------------------------------
+
 function Install-Chrome {
-    Install-EXE "Chrome" "https://dl.google.com/chrome/install/latest/chrome_installer.exe"
+    Install-EXE "Chrome" `
+        "https://dl.google.com/chrome/install/latest/chrome_installer.exe" `
+        "/silent /install"
 }
 
 function Install-Takeoff {
-    Install-EXE "OnScreenTakeoff" "https://downloads.oncenter.com/Downloads/OST/400/OST4.0.0.288Setup.exe"
+    Install-EXE "Takeoff" `
+        "https://downloads.oncenter.com/Downloads/OST/400/OST4.0.0.288Setup.exe" `
+        "/s /v`"/qn`""
 }
 
 function Install-QuickBid {
-    Install-EXE "QuickBid" "https://downloads.oncenter.com/Downloads/QB/499/QB4990516Setup.exe"
+    Install-EXE "QuickBid" `
+        "https://downloads.oncenter.com/Downloads/QB/499/QB4990516Setup.exe" `
+        "/s /v`"/qn`""
 }
 
 function Install-Bluebeam21 {
-    # Bluebeam provides a universal link that redirects to the correct installer
-    Install-EXE "BluebeamRevu21" "https://bluebeam.com/FullRevuTRIAL"
+    Install-EXE "BluebeamRevu21" `
+        "https://bluebeam.com/FullRevuTRIAL" `
+        "/s /v`"/qn /norestart`""
 }
 
 function Install-Office365 {
-    Install-EXE "ODT" "https://download.microsoft.com/download/2/8/E/28E8EC70-BD0C-4CD1-B447-3B0C10CC9F40/officedeploymenttool.exe"
-    Write-Log "Office Deployment Tool installed. Configure configuration.xml for deployment."
+    Install-EXE "ODT" `
+        "https://download.microsoft.com/download/2/8/E/28E8EC70-BD0C-4CD1-B447-3B0C10CC9F40/officedeploymenttool.exe" `
+        "/quiet"
 }
 
 function Install-Teams {
-    Install-EXE "TeamsWork" "https://statics.teams.cdn.office.net/production-windows-x86/lkg/MSTeamsSetup.exe"
+    Install-EXE "TeamsWork" `
+        "https://statics.teams.cdn.office.net/production-windows-x86/lkg/MSTeamsSetup.exe" `
+        "--silent --disableAutoLaunch"
 }
 
 function Run-Debloat {
@@ -80,8 +105,8 @@ function Run-Debloat {
 }
 
 function Remove-PreloadedOffice {
-    Write-Log "Removing bundled Microsoft Office Store apps..."
-
+    Write-Log "Removing Microsoft preloaded Office apps..."
+    
     $Apps = @(
         "Microsoft.Office.Desktop",
         "Microsoft.OfficeHub",
@@ -89,11 +114,13 @@ function Remove-PreloadedOffice {
         "Microsoft.Office.OneNote",
         "MicrosoftTeams"
     )
+
     foreach ($app in $Apps) {
         Get-AppxPackage -Name $app -AllUsers | Remove-AppxPackage -ErrorAction SilentlyContinue
         Get-AppxProvisionedPackage -Online | Where-Object {$_.DisplayName -eq $app} |
             Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue
     }
+
     Write-Log "Preloaded Office apps removed."
 }
 
@@ -105,46 +132,46 @@ function Run-WindowsUpdate {
     Write-Log "Windows Update completed."
 }
 
-# ============================================================
-#                        GUI Setup
-# ============================================================
+# ---------------------------------------------
+# RUN ALL IN ORDER
+# ---------------------------------------------
+function Run-All {
+    Write-Log "=== STARTING FULL AUTOMATED INSTALL ==="
+
+    Install-Chrome
+    Install-Takeoff
+    Install-QuickBid
+    Install-Bluebeam21
+    Install-Office365
+    Install-Teams
+    Run-Debloat
+    Remove-PreloadedOffice
+    Run-WindowsUpdate
+
+    Write-Log "=== FULL INSTALL COMPLETED ==="
+}
+
+# ---------------------------------------------
+# GUI SETUP
+# ---------------------------------------------
 
 $Form = New-Object System.Windows.Forms.Form
 $Form.Text = "Windows Setup Toolkit"
-$Form.Size = New-Object System.Drawing.Size(650,500)
+$Form.Size = New-Object System.Drawing.Size(820,520)
 $Form.StartPosition = "CenterScreen"
 
-# Buttons
 function Add-Button {
     param($text, $x, $y, $action)
 
     $btn = New-Object System.Windows.Forms.Button
     $btn.Text = $text
-    $btn.Size = New-Object System.Drawing.Size(200,35)
+    $btn.Size = New-Object System.Drawing.Size(240,35)
     $btn.Location = New-Object System.Drawing.Point($x,$y)
     $btn.Add_Click($action)
     $Form.Controls.Add($btn)
 }
 
 Add-Button "Install Chrome" 20 20 { Install-Chrome }
-Add-Button "Install On-Screen Quick Bid" 20 65 { Install-QuickBid }
-Add-Button "Install On-Screen Takeoff" 20 110 { Install-Takeoff }
-Add-Button "Install Bluebeam Revu 21" 20 155 { Install-Bluebeam21 }
-Add-Button "Install Office 365" 20 200 { Install-Office365 }
-Add-Button "Install Teams (Work)" 20 245 { Install-Teams }
-Add-Button "Run Debloat" 20 290 { Run-Debloat }
-Add-Button "Remove Preloaded Office" 20 335 { Remove-PreloadedOffice }
-Add-Button "Run Windows Updates" 20 380 { Run-WindowsUpdate }
-
-# Log Box
-$LogBox = New-Object System.Windows.Forms.TextBox
-$LogBox.Multiline = $true
-$LogBox.ScrollBars = "Vertical"
-$LogBox.ReadOnly = $true
-$LogBox.Size = New-Object System.Drawing.Size(360,390)
-$LogBox.Location = New-Object System.Drawing.Point(260,20)
-$Form.Controls.Add($LogBox)
-
-# Start GUI
-Write-Log "Toolkit started."
-$Form.ShowDialog()
+Add-Button "Install QuickBid" 20 65 { Install-QuickBid }
+Add-Button "Install Takeoff" 20 110 { Install-Takeoff }
+Add-Button "Insta
