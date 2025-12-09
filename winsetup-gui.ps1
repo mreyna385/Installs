@@ -51,20 +51,17 @@ function Install-Chrome {
     Install-EXE "Chrome" "https://dl.google.com/chrome/install/latest/chrome_installer.exe"
 }
 
-function Install-Bluebeam21 {
-    # Replace with your real download link later
-    $URL = "https://downloads.bluebeam.com/downloads/Revu21/Revu21.exe"
-    Install-EXE "Bluebeam21" $URL
-}
-
 function Install-Takeoff {
-    Write-Log "On-Screen Takeoff requires manual download from:"
-    Write-Log "https://kbase.oncenter.com/article/AA-00227"
+    Install-EXE "OnScreenTakeoff" "https://downloads.oncenter.com/Downloads/OST/400/OST4.0.0.288Setup.exe"
 }
 
 function Install-QuickBid {
-    Write-Log "Quick Bid requires manual download from:"
-    Write-Log "https://kbase.oncenter.com/article/AA-00271"
+    Install-EXE "QuickBid" "https://downloads.oncenter.com/Downloads/QB/499/QB4990516Setup.exe"
+}
+
+function Install-Bluebeam21 {
+    # Bluebeam provides a universal link that redirects to the correct installer
+    Install-EXE "BluebeamRevu21" "https://bluebeam.com/FullRevuTRIAL"
 }
 
 function Install-Office365 {
@@ -73,7 +70,7 @@ function Install-Office365 {
 }
 
 function Install-Teams {
-    Install-EXE "TeamsWork" "https://go.microsoft.com/fwlink/?linkid=2243204"
+    Install-EXE "TeamsWork" "https://statics.teams.cdn.office.net/production-windows-x86/lkg/MSTeamsSetup.exe"
 }
 
 function Run-Debloat {
@@ -130,9 +127,9 @@ function Add-Button {
 }
 
 Add-Button "Install Chrome" 20 20 { Install-Chrome }
-Add-Button "Install Bluebeam 21" 20 65 { Install-Bluebeam21 }
-Add-Button "On Screen Quick Bid" 20 110 { Install-QuickBid }
-Add-Button "On Screen Takeoff" 20 155 { Install-Takeoff }
+Add-Button "Install On-Screen Quick Bid" 20 65 { Install-QuickBid }
+Add-Button "Install On-Screen Takeoff" 20 110 { Install-Takeoff }
+Add-Button "Install Bluebeam Revu 21" 20 155 { Install-Bluebeam21 }
 Add-Button "Install Office 365" 20 200 { Install-Office365 }
 Add-Button "Install Teams (Work)" 20 245 { Install-Teams }
 Add-Button "Run Debloat" 20 290 { Run-Debloat }
