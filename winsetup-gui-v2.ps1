@@ -1,14 +1,15 @@
 # ============================================================
 #   Windows Setup Toolkit - GUI Version w/ Logging + Run All
-#   V2 Clean Pull-Safe Build
+#   v3 - Robust, no null-argument crashes
 # ============================================================
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 # ---------------------------------------------
-# GUI
+# GUI SETUP
 # ---------------------------------------------
+
 $Form = New-Object System.Windows.Forms.Form
 $Form.Text = "Windows Setup Toolkit"
 $Form.Size = New-Object System.Drawing.Size(900,560)
@@ -24,8 +25,9 @@ $LogBox.Location = New-Object System.Drawing.Point(270,20)
 $Form.Controls.Add($LogBox)
 
 # ---------------------------------------------
-# Logging
+# LOGGING
 # ---------------------------------------------
+
 $LogPath = "C:\WindowsSetupToolkit"
 $LogFile = Join-Path $LogPath "install.log"
 
@@ -42,8 +44,9 @@ function Write-Log {
 }
 
 # ---------------------------------------------
-# Download + Install Helpers
+# DOWNLOAD + INSTALL HELPERS
 # ---------------------------------------------
+
 function Install-EXE {
     param(
         [string]$Name,
@@ -56,10 +59,16 @@ function Install-EXE {
     Invoke-WebRequest -Uri $URL -OutFile $Temp -UseBasicParsing
 
     Write-Log "Installing $Name silently..."
-    Start-Process -FilePath $Temp -ArgumentList $Args -Wait
+    if ([string]::IsNullOrWhiteSpace($Args)) {
+        Start-Process -FilePath $Temp -Wait
+        Write-Log "WARNING: $Name installed with NO arguments (Args was empty)."
+    }
+    else {
+        Start-Process -FilePath $Temp -ArgumentList $Args -Wait
+    }
 
     Remove-Item $Temp -Force -ErrorAction SilentlyContinue
-    Write-Log "$Name installed successfully."
+    Write-Log "$Name install step finished."
 }
 
 function Install-MSI {
@@ -74,15 +83,24 @@ function Install-MSI {
     Invoke-WebRequest -Uri $URL -OutFile $Temp -UseBasicParsing
 
     Write-Log "Installing $Name silently..."
-    Start-Process -FilePath "msiexec.exe" -ArgumentList "/i `"$Temp`" $Args" -Wait
+    if ([string]::IsNullOrWhiteSpace($Args)) {
+        $msiArgs = "/i `"{0}`"" -f $Temp
+        Start-Process -FilePath "msiexec.exe" -ArgumentList $msiArgs -Wait
+        Write-Log "WARNING: $Name installed with NO extra MSI arguments."
+    }
+    else {
+        $msiArgs = "/i `"{0}`" {1}" -f $Temp, $Args
+        Start-Process -FilePath "msiexec.exe" -ArgumentList $msiArgs -Wait
+    }
 
     Remove-Item $Temp -Force -ErrorAction SilentlyContinue
-    Write-Log "$Name installed successfully."
+    Write-Log "$Name install step finished."
 }
 
 # ---------------------------------------------
-# App Installs
+# APP INSTALL FUNCTIONS
 # ---------------------------------------------
+
 function Install-Chrome {
     Install-EXE -Name "Chrome" `
         -URL "https://dl.google.com/chrome/install/latest/chrome_installer.exe" `
@@ -157,12 +175,13 @@ function Run-WindowsUpdate {
 function Run-CTTWinUtil {
     Write-Log "Launching Chris Titus Windows Utility..."
     (Invoke-WebRequest -UseBasicParsing -Uri "https://christitus.com/win").Content | Invoke-Expression
-    Write-Log "CTT utility execution finished."
+    Write-Log "CTT Windows Utility execution finished."
 }
 
 # ---------------------------------------------
-# Run All
+# RUN ALL
 # ---------------------------------------------
+
 function Run-All {
     Write-Log "=== STARTING FULL AUTOMATED INSTALL ==="
 
@@ -180,8 +199,9 @@ function Run-All {
 }
 
 # ---------------------------------------------
-# Button Helper
+# BUTTON HELPER
 # ---------------------------------------------
+
 function Add-Button {
     param(
         [string]$text,
@@ -199,19 +219,20 @@ function Add-Button {
 }
 
 # ---------------------------------------------
-# Buttons
+# BUTTONS
 # ---------------------------------------------
-Add-Button "Install Chrome" 20 20 { Install-Chrome }
-Add-Button "Install QuickBid" 20 65 { Install-QuickBid }
-Add-Button "Install Takeoff" 20 110 { Install-Takeoff }
-Add-Button "Install Bluebeam 21" 20 155 { Install-Bluebeam21 }
-Add-Button "Install Office 365" 20 200 { Install-Office365 }
-Add-Button "Install Teams" 20 245 { Install-Teams }
-Add-Button "Run Debloat" 20 290 { Run-Debloat }
-Add-Button "Remove Preloaded Office" 20 335 { Remove-PreloadedOffice }
-Add-Button "Run Windows Update" 20 380 { Run-WindowsUpdate }
-Add-Button "Run CTT Windows Utility" 20 425 { Run-CTTWinUtil }
-Add-Button "RUN ALL" 20 470 { Run-All }
+
+Add-Button "Install Chrome"            20  20 { Install-Chrome }
+Add-Button "Install QuickBid"          20  65 { Install-QuickBid }
+Add-Button "Install Takeoff"           20 110 { Install-Takeoff }
+Add-Button "Install Bluebeam 21"       20 155 { Install-Bluebeam21 }
+Add-Button "Install Office 365"        20 200 { Install-Office365 }
+Add-Button "Install Teams"             20 245 { Install-Teams }
+Add-Button "Run Debloat"               20 290 { Run-Debloat }
+Add-Button "Remove Preloaded Office"   20 335 { Remove-PreloadedOffice }
+Add-Button "Run Windows Update"        20 380 { Run-WindowsUpdate }
+Add-Button "Run CTT Windows Utility"   20 425 { Run-CTTWinUtil }
+Add-Button "RUN ALL"                   20 470 { Run-All }
 
 Write-Log "GUI loaded."
 [void]$Form.ShowDialog()
