@@ -2,7 +2,7 @@
 <#
 .SYNOPSIS
     Windows Setup Toolkit — entry point.
-    Run via: iwr -useb https://raw.githubusercontent.com/USERNAME/REPO/main/setup.ps1 | iex
+    Run via: iwr -useb https://raw.githubusercontent.com/mreyna385/Installs/main/setup.ps1 | iex
 #>
 
 # ── TLS 1.2 ────────────────────────────────────────────────────────────────────
@@ -13,7 +13,7 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
         [Security.Principal.WindowsBuiltInRole]::Administrator)) {
 
     Write-Host "Not running as Administrator — relaunching elevated..." -ForegroundColor Yellow
-    $psArgs = "-NoProfile -ExecutionPolicy Bypass -Command `"iwr -useb https://raw.githubusercontent.com/USERNAME/REPO/main/setup.ps1 | iex`""
+    $psArgs = "-NoProfile -ExecutionPolicy Bypass -Command `"iwr -useb https://raw.githubusercontent.com/mreyna385/Installs/main/setup.ps1 | iex`""
     Start-Process powershell.exe -ArgumentList $psArgs -Verb RunAs
     exit
 }
@@ -39,7 +39,7 @@ function Write-Log {
 Write-Log "=== Windows Setup Toolkit started ==="
 
 # ── Download and dot-source apps.ps1 ───────────────────────────────────────────
-$appsUrl  = 'https://raw.githubusercontent.com/USERNAME/REPO/main/apps.ps1'
+$appsUrl  = 'https://raw.githubusercontent.com/mreyna385/Installs/main/apps.ps1'
 $appsTmp  = "$env:TEMP\WinSetup_apps.ps1"
 
 Write-Log "Downloading apps.ps1 from $appsUrl"
